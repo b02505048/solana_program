@@ -1,5 +1,5 @@
 [package]
-name = "alice_and_bob"
+name = "tesolana"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,5 +12,5 @@ solana-program = "1.14.5"
 concrete = "0.2.0"
 
 [lib]
-name = "alice_and_bob"
+name = "tesolana"
 crate-type = ["cdylib", "lib"]
