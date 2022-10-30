@@ -1,14 +1,27 @@
-# Tesolana - A Solana Program for Encryption(Testing)
+# Simple Solana Program
+Just increase user balance in bank account
 
-Once you're ready to deploy your Solana program to the Solana cluster, you may execute the following commands under the root of the project.
+### Build & Deploy
 
 ```
-// Build the Solana program .so
-cargo build-bpf
+$ cd program
+$ make build
 
-// Check the current Solana cluster
-solana config get
-
-// Deploy the Solana program to Solana cluster
-solana program deploy ./target/deploy/tesolana.so
+// deploy to localnet
+$ make local
 ```
+
+### Test
+
+```
+$ cd program
+$ cargo test
+```
+
+### Client command
+
+```
+// increase balance
+$ yarn start
+```
+
