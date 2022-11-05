@@ -96,7 +96,7 @@ async function get_payer(): Promise<Keypair>{
   return payer;
 }
 
-async function get_public_key(payer: Keypair): Promise<PublicKey>{
+async function get_public_key(): Promise<PublicKey>{
   // 3. check program
   let programId: PublicKey;
   try {
@@ -128,54 +128,64 @@ async function get_public_key(payer: Keypair): Promise<PublicKey>{
 }
 
 (async () => {
+  // payer is the one who deployed this smart contract on solana chain
+  // payer is keypair
   let payer = await get_payer();
 
-  let programId = await get_public_key(payer);
+  // programId is public key of program (this smart contract Id), means smart contract address
+  // address is created by public key 1 to 1.
+  let programId = await get_public_key();
 
+
+  // MY_SEED is decided by each user
   const MY_SEED = "bank";
+
+  // toPubKey holds write permission to account data
+  // each user makes toPubKey
+  // service registration
   let toPubkey = await PublicKey.createWithSeed(
     payer.publicKey,
     MY_SEED,
     programId
   );
 
-
+  
+  // getAccountInfo to get account_info
   const account = await connection.getAccountInfo(toPubkey);
+
+  // if account does not exist, create account
+  // need to pay lamports depends on datasize
   if (account === null) {
    const lamports = await connection.getMinimumBalanceForRentExemption(
     coordinate_size
    );
-
+  
+   // account is data account
    const transaction = new Transaction().add(
      SystemProgram.createAccountWithSeed({
        fromPubkey: payer.publicKey,
        basePubkey: payer.publicKey,
-       seed: MY_SEED,
-       newAccountPubkey: toPubkey,
+       seed: MY_SEED, // seed must be same
+       newAccountPubkey: toPubkey, // associate account to toPubKey
        lamports,
        space: coordinate_size,
        programId,
      })
    );
+   // create account
    await sendAndConfirmTransaction(connection, transaction, [payer]);
   }
 
-  // 5. check result
+  // after created account, check the account_info
   const accountInfo = await connection.getAccountInfo(toPubkey);
   if (accountInfo === null) {
   throw "Error: cannot find the bank account";
   }
-  console.log("debug-1")
-  console.log(accountInfo.data);
-  const res = borsh.deserialize(
-  CoordinateSchema,
-  Coordinates,
-  accountInfo.data
-  );
+  const res = borsh.deserialize(CoordinateSchema, Coordinates, accountInfo.data);
   console.log(res);
 
 
-  //  // 4. send transaction
+  //  // send instruction to entrypoints, with no data
   //  const instruction = new TransactionInstruction({
   //  keys: [{ pubkey: toPubkey, isSigner: false, isWritable: true }],
   //  programId,
@@ -196,28 +206,32 @@ const add_friend = "myfriend1";
 const instructionData = serializeData(command, lat, lng, add_friend);
 console.log("\ndebug2");
 
+// toPubKey == public key which has write permission to the account
+// pubKey == public key of client
+
 const programInstruction = new TransactionInstruction({
- keys: [{ pubkey: toPubkey, isSigner: false, isWritable: true }],
- programId: programId,
- data: Buffer.from(instructionData),
+  // access to data account which toPubKey can write
+ keys: [
+  { pubkey: toPubkey, isSigner: false, isWritable: true },
+  { pubkey: toPubkey, isSigner: false, isWritable: true }
+  ],
+ programId: programId, // address of contract
+ data: Buffer.from(instructionData), // data in byte array
 });
 console.log("\ndebug3");
 
+// payer is signer which is myself here
+// signer is wallet holder
 const programTx = await sendAndConfirmTransaction(connection, new Transaction().add(programInstruction), [payer]);
-
 
 console.log("done the program", programTx);
 
-// 5. check result
+// get account after
 const accountInfo_res = await connection.getAccountInfo(toPubkey);
 if (accountInfo_res === null) {
  throw "Error: cannot find the bank account";
 }
-const res1 = borsh.deserialize(
- CoordinateSchema,
- Coordinates,
- accountInfo_res.data
-);
+const res1 = borsh.deserialize(CoordinateSchema, Coordinates, accountInfo_res.data);
 console.log(res1);
   
 })();

@@ -50,6 +50,10 @@ pub struct OptionCommand{
 }
 
 
+// trying to understand
+// - shared storage?? (make another sc and get it from there)
+// -  
+
 entrypoint!(increase_balance);
 
 pub fn increase_balance(
@@ -57,10 +61,17 @@ pub fn increase_balance(
     accounts: &[AccountInfo],
     _instruction_data: &[u8],
 ) -> ProgramResult {
+
     msg!("start increase_balance");
     let accounts_iter = &mut accounts.iter();
     let account = next_account_info(accounts_iter)?;
-    // account must be owned by the progragetAccountInfom in order to modify its data
+
+
+    // client1 -> get_location(account_info)
+
+    //let target_account
+
+    // account must be owned by the programgetAccountInfo in order to modify its data
     if account.owner != program_id {
         return Err(ProgramError::IncorrectProgramId);
     }
