@@ -52,7 +52,22 @@ pub struct OptionCommand{
 
 // trying to understand
 // - shared storage?? (make another sc and get it from there)
-// -  
+// - vec list for frinds list
+// - need to store key switch key
+// - somehow need to intialize the server pk/sk when sc deployed
+
+
+// TODO function to implement
+// 0 => create ksk for user
+// 1 => set encrypted coordinate
+// 2 => set friends list
+// 3 => remove friends from list
+// 4 => get location
+
+// TODO necessary impl
+
+// - hard code sk, pk for sc side first
+// - fix the struct shape
 
 entrypoint!(increase_balance);
 

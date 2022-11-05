@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
+import * as borsh from "borsh";
 
 import {
   Connection,
@@ -17,6 +18,15 @@ import fs from "mz/fs";
 import path from "path";
 import yaml from "yaml";
 import { Keypair } from "@solana/web3.js";
+
+const PROGRAM_PATH = path.resolve(__dirname, "../../program");
+const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, "target/deploy/bank.so");
+const PROGRAM_KEYPAIR_PATH = path.join(
+  PROGRAM_PATH,
+  "target/deploy/bank-keypair.json"
+);
+
+import { Coordinates, OptionSchema, CoordinateSchema, data_account_size} from "./data";
 
 async function getConfig(): Promise<any> {
   const CONFIG_FILE_PATH = path.resolve(
@@ -53,4 +63,106 @@ export async function createKeypairFromFile(
   const secretKeyString = await fs.readFile(filePath, { encoding: "utf8" });
   const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
   return Keypair.fromSecretKey(secretKey);
+}
+
+
+export async function get_payer(connection: Connection): Promise<Keypair>{
+  // 2. establish payer
+  let fees = 0;
+  const { feeCalculator } = await connection.getRecentBlockhash();
+  fees += await connection.getMinimumBalanceForRentExemption(data_account_size);
+  fees += feeCalculator.lamportsPerSignature * 100; // wag
+  let payer: Keypair = await getPayer();
+
+  let lamports = await connection.getBalance(payer.publicKey);
+  if (lamports < fees) {
+   const sig = await connection.requestAirdrop(
+     payer.publicKey,
+     fees - lamports
+   );
+   await connection.confirmTransaction(sig);
+   lamports = await connection.getBalance(payer.publicKey);
+  }
+  return payer;
+}
+
+export async function get_program_id(connection: Connection): Promise<PublicKey>{
+  // 3. check program
+  let programId: PublicKey;
+  try {
+    const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
+    programId = programKeypair.publicKey;
+  } catch (err) {
+    const errMsg = (err as Error).message;
+    throw new Error(
+      `Failed to read program keypair at '${PROGRAM_KEYPAIR_PATH}' due to error: ${errMsg}. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``
+    );
+  }
+
+  const programInfo = await connection.getAccountInfo(programId);
+  if (programInfo === null) {
+   if (fs.existsSync(PROGRAM_SO_PATH)) {
+     throw new Error(
+       "Program needs to be deployed with `solana program deploy dist/program/helloworld.so`"
+     );
+   } else {
+     throw new Error("Program needs to be built and deployed");
+   }
+  } else if (!programInfo.executable) {
+   throw new Error(`Program is not executable`);
+  }
+  return programId;
+}
+
+
+export async function register_user(connection: Connection, payer: Keypair, seed: string, programId: PublicKey): Promise<PublicKey>{
+  // toPubKey holds write permission to account data
+  // each user makes toPubKey
+  // service registration
+  let toPubkey = await PublicKey.createWithSeed(
+    payer.publicKey,
+    seed,
+    programId
+  );
+
+  
+  // getAccountInfo to get account_info
+  const account = await connection.getAccountInfo(toPubkey);
+
+  // if account does not exist, create account
+  // need to pay lamports depends on datasize
+  if (account === null) {
+   const lamports = await connection.getMinimumBalanceForRentExemption(
+    data_account_size
+   );
+  
+   // account is data account
+   const transaction = new Transaction().add(
+     SystemProgram.createAccountWithSeed({
+       fromPubkey: payer.publicKey,
+       basePubkey: payer.publicKey,
+       seed: seed, // seed must be same
+       newAccountPubkey: toPubkey, // associate account to toPubKey
+       lamports,
+       space: data_account_size,
+       programId,
+     })
+   );
+   // create account
+   await sendAndConfirmTransaction(connection, transaction, [payer]);
+  }
+
+  return toPubkey;
+
+}
+
+export async function get_account_info_then_deserialize(connection: Connection, toPubkey: PublicKey): Promise<void>{
+  // after created account, check the account_info
+  const accountInfo = await connection.getAccountInfo(toPubkey);
+  if (accountInfo === null) {
+  throw "Error: cannot find the account";
+  }
+  const res = borsh.deserialize(CoordinateSchema, Coordinates, accountInfo.data);
+  console.log(res);
+
 }
