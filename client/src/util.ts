@@ -26,7 +26,7 @@ const PROGRAM_KEYPAIR_PATH = path.join(
   "target/deploy/bank-keypair.json"
 );
 
-import { Coordinates, OptionSchema, CoordinateSchema, data_account_size} from "./data";
+import { Datas, OptionSchema, DataSchema, data_account_size} from "./data";
 
 async function getConfig(): Promise<any> {
   const CONFIG_FILE_PATH = path.resolve(
@@ -115,54 +115,3 @@ export async function get_program_id(connection: Connection): Promise<PublicKey>
 }
 
 
-export async function register_user(connection: Connection, payer: Keypair, seed: string, programId: PublicKey): Promise<PublicKey>{
-  // toPubKey holds write permission to account data
-  // each user makes toPubKey
-  // service registration
-  let toPubkey = await PublicKey.createWithSeed(
-    payer.publicKey,
-    seed,
-    programId
-  );
-
-  
-  // getAccountInfo to get account_info
-  const account = await connection.getAccountInfo(toPubkey);
-
-  // if account does not exist, create account
-  // need to pay lamports depends on datasize
-  if (account === null) {
-   const lamports = await connection.getMinimumBalanceForRentExemption(
-    data_account_size
-   );
-  
-   // account is data account
-   const transaction = new Transaction().add(
-     SystemProgram.createAccountWithSeed({
-       fromPubkey: payer.publicKey,
-       basePubkey: payer.publicKey,
-       seed: seed, // seed must be same
-       newAccountPubkey: toPubkey, // associate account to toPubKey
-       lamports,
-       space: data_account_size,
-       programId,
-     })
-   );
-   // create account
-   await sendAndConfirmTransaction(connection, transaction, [payer]);
-  }
-
-  return toPubkey;
-
-}
-
-export async function get_account_info_then_deserialize(connection: Connection, toPubkey: PublicKey): Promise<void>{
-  // after created account, check the account_info
-  const accountInfo = await connection.getAccountInfo(toPubkey);
-  if (accountInfo === null) {
-  throw "Error: cannot find the account";
-  }
-  const res = borsh.deserialize(CoordinateSchema, Coordinates, accountInfo.data);
-  console.log(res);
-
-}

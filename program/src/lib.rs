@@ -9,14 +9,14 @@ use solana_program::{
     msg,
 };
 
-use grasscrete::{
-    PublicKey,
-    SecretKey,
-    KeySwitchKey,
-    gen_pk,
-    gen_sk,
-    gen_ksk
-};
+// use grasscrete::{
+//     PublicKey,
+//     SecretKey,
+//     KeySwitchKey,
+//     gen_pk,
+//     gen_sk,
+//     gen_ksk
+// };
 
 
 // program data
@@ -27,17 +27,19 @@ use grasscrete::{
 
 // program data
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
-pub struct CoordinatesData{
+pub struct UserData{
     pub lat: u32,
     pub lng: u32,
-    pub ksk_server_to_me: String
-}
+    pub pk: u32,
+    pub ksk: u32,
+    pub friend1: String,
+    pub friend2: String,
+    pub friend3: String,
+    pub friend_lat: u32,
+    pub friend_lng: u32,
 
-// // program data
-// #[derive(BorshSerialize, BorshDeserialize, Debug)]
-// pub struct FriendsData{
-//     pub data: Vec<String>,
-// }
+    //pub ksk_server_to_me: String
+}
 
 
 // program argument
@@ -46,7 +48,9 @@ pub struct OptionCommand{
     pub command: u32,
     pub lat: u32,
     pub lng: u32 ,
-    pub target_friend: String
+    pub pk: u32,
+    pub friend_id: u32,
+    pub friend_address: String, 
 }
 
 
@@ -68,6 +72,11 @@ pub struct OptionCommand{
 
 // - hard code sk, pk for sc side first
 // - fix the struct shape
+
+const server_sk: f64 = 1./0.2;
+const server_pk: f64 = 0.2;
+const multiple: f64 = 1000.0;
+
 
 entrypoint!(increase_balance);
 
@@ -98,137 +107,141 @@ pub fn increase_balance(
 
     let result: Result<(), ProgramError> =  match instruction.command{
         0 => {
-            //udpate coordinate
-            msg!("got 0!!!");
-            msg!("{:?}", &account.data);
-            msg!("{:?}", &instruction);
-            let mut coordnate_info= CoordinatesData::try_from_slice(&account.data.borrow())?;
-            msg!("parsed!!!");
-            coordnate_info.lat = instruction.lat;
-            coordnate_info.lng = instruction.lng;
-            coordnate_info.serialize(&mut &mut account.data.borrow_mut()[..])?;
+            // InitializeAccount
             Ok(())
         }
 
         1 => {
-            //reset coordinate
-            let mut coordnate_info= CoordinatesData::try_from_slice(&account.data.borrow())?;
-            coordnate_info.lat = 0;
-            coordnate_info.lng = 0;
-            coordnate_info.serialize(&mut &mut account.data.borrow_mut()[..])?;
+            // UploadLocation
+            let mut user_data = UserData::try_from_slice(&account.data.borrow())?;
+            user_data.lat = instruction.lat;
+            user_data.lng = instruction.lng;
+            user_data.serialize(&mut &mut account.data.borrow_mut()[..])?;
             Ok(())
+
         }
 
         2 => {
-            // add friends
-            msg!("got 2!!");
-            //let mut friends_info = FriendsData::try_from_slice(&account.data.borrow())?;
-            //friends_info.data.push(instruction.add_friend);
-            //friends_info.data.push("test".to_string());
-            msg!("{}", instruction.target_friend);
+            // ResetLocation
+            let mut user_data= UserData::try_from_slice(&account.data.borrow())?;
+            user_data.lat = 0;
+            user_data.lng = 0;
+            user_data.serialize(&mut &mut account.data.borrow_mut()[..])?;
             Ok(())
         }
 
         3 => {
-            // request ksk generation
-            msg!("got 3!!");
-            let mut coordinate_info= CoordinatesData::try_from_slice(&account.data.borrow())?;
-            //coordinate_info.ksk_server_to_me = gen_ksk(from_sk, to_pk);
+            // RequestLocation
+
+            // first get ksk of client1
+            let mut user_data= UserData::try_from_slice(&account.data.borrow())?;
+            let ksk = user_data.ksk;
+
+            // second get coords of client2
+            let account2 = next_account_info(accounts_iter)?;
+            let user_data2= UserData::try_from_slice(&account2.data.borrow())?;
+
+            let mut user2_lat = user_data2.lat;
+            let mut user2_lng = user_data2.lng;
+
+            // third operate ksk
+            user2_lat = (((user2_lat as f64 / multiple) * (ksk as f64 / multiple)) * multiple) as u32;
+            user2_lng = (((user2_lng as f64 / multiple) * (ksk as f64 / multiple)) * multiple) as u32;
 
 
-
-
+            // fourth write result to user1.friend_lat, user1.friend_lng
+            user_data.friend_lat = user2_lat;
+            user_data.friend_lng = user2_lng;
+            user_data.serialize(&mut &mut account.data.borrow_mut()[..])?;
 
             Ok(())
 
         }
 
+        4 => {
+            // AddFriend
+
+            // first get friend_id and friend_address of from instruction
+            let mut user_data= UserData::try_from_slice(&account.data.borrow())?;
+            msg!("got 4");
+            let friend_id = instruction.friend_id;
+            msg!("id {}", friend_id);
+            let friend_address = instruction.friend_address;
+            msg!("address {}", friend_address);
+
+            // second update user_data
+            if friend_id == 1{
+                msg!("here1");
+               user_data.friend1 = friend_address;
+                msg!("here2");
+            }
+            else if friend_id == 2{
+               user_data.friend2 = friend_address;
+
+            }
+            else if friend_id == 3{
+               user_data.friend3 = friend_address;
+
+            }
+
+            user_data.serialize(&mut &mut account.data.borrow_mut()[..])?;
+
+            Ok(())
+
+        }
+
+        5 => {
+            // RemoveFriend
+
+            // first get friend_id and friend_address of from instruction
+            let mut user_data= UserData::try_from_slice(&account.data.borrow())?;
+            let friend_id = instruction.friend_id;
+
+            // second update user_data
+            if friend_id == 1{
+               user_data.friend1 = "".to_string();
+            }
+            else if friend_id == 2{
+               user_data.friend2 = "".to_string();
+
+            }
+            else if friend_id == 3{
+               user_data.friend3 = "".to_string();
+
+            }
+
+            user_data.serialize(&mut &mut account.data.borrow_mut()[..])?;
+
+            Ok(())
+
+        }
+
+        6 => {
+            // SetPk
+
+            // first get user_data from account
+            let mut user_data= UserData::try_from_slice(&account.data.borrow())?;
+
+            // update user_data.pk with instruction.pk
+            user_data.pk = instruction.pk;
+
+            // calculate ksk for this user
+            let ksk = (user_data.pk as f64 / multiple as f64) * server_sk;
+
+            user_data.ksk = (ksk * multiple as f64) as u32;
+
+            // update user_data
+            user_data.serialize(&mut &mut account.data.borrow_mut()[..])?;
+
+            
+            Ok(())
+        }
 
         _ => Err(ProgramError::InvalidInstructionData)
 
-        // _ => Err(ProgramError::InvalidInstructionData)
-        // 0 => {
-        //     let mut bank_account = BankAccount::try_from_slice(&account.data.borrow())?;
-        //     bank_account.balance += 1;
-        //     bank_account.serialize(&mut &mut account.data.borrow_mut()[..])?;
-        //     Ok(())
-
-        // }
-        // 1 => {
-        //     let mut bank_account = BankAccount::try_from_slice(&account.data.borrow())?;
-        //     bank_account.balance -= 1;
-        //     bank_account.serialize(&mut &mut account.data.borrow_mut()[..])?;
-        //     Ok(())
-
-
-        // }
-
-        // 2 => {
-        //     let mut coordinate_info: Coordinates = Coordinates::try_from_slice(&account.data.borrow())?;
-        //     coordinate_info.lat = coordinate_info.lat;
-        //     coordinate_info.lat = coordinate_info.lng;
-        //     coordinate_info.serialize(&mut &mut account.data.borrow_mut()[..])?;
-
-        //     Ok(())
-        // }
-
-        // _ => Err(ProgramError::InvalidInstructionData)
     };
 
 
 
     Ok(())
 }
-
-// Sanity tests
-//#[cfg(test)]
-//mod test {
-//    use super::*;
-//    use solana_program::clock::Epoch;
-//    use std::mem;
-//
-//    #[test]
-//    fn test_sanity() {
-//        let program_id = Pubkey::default();
-//        let key = Pubkey::default();
-//        let mut lamports = 0;
-//        let mut data = vec![0; mem::size_of::<u32>()];
-//        let owner = Pubkey::default();
-//        let account = AccountInfo::new(
-//            &key,
-//            false,
-//            true,
-//            &mut lamports,
-//            &mut data,
-//            &owner,
-//            false,
-//            Epoch::default(),
-//        );
-//        let instruction_data: Vec<u8> = Vec::new();
-//
-//        let accounts = vec![account];
-//
-//        assert_eq!(
-//            BankAccount::try_from_slice(&accounts[0].data.borrow())
-//                .unwrap()
-//                .balance,
-//            0
-//        );
-//        increase_balance(&program_id, &accounts, &instruction_data).unwrap();
-//        assert_eq!(
-//            BankAccount::try_from_slice(&accounts[0].data.borrow())
-//                .unwrap()
-//                .balance,
-//            1
-//        );
-//        increase_balance(&program_id, &accounts, &instruction_data).unwrap();
-//        assert_eq!(
-//            BankAccount::try_from_slice(&accounts[0].data.borrow())
-//                .unwrap()
-//                .balance,
-//            2
-//        );
-//    }
-//}
-//
-//

@@ -12,15 +12,40 @@ import * as borsh from "borsh";
 import path from "path";
 import { createKeypairFromFile, getPayer, getRpcUrl } from "./util";
 
-import {get_payer, get_program_id, register_user, get_account_info_then_deserialize} from "./util";
+import {get_payer, get_program_id, } from "./util";
+import { register_user, get_account_info_then_deserialize} from "./commands";
 
-import { serializeData } from "./data";
+import {
+    gen_sk,
+    gen_pk,
+    encrypt,
+    decrypt
+} from "./grasscrete";
 
 
-import init, {gen_pk, gen_sk, gen_ksk, encrypt, decrypt, keyswitch,
-  SecretKey, PublicKey as GPublicKey, KeySwitchKey}
-from "../../program/grasscrete/pkg/grasscrete.js";
-import { Z_OK } from "mz/zlib";
+
+import {
+    command_add_friend,
+    command_remove_friend,
+    command_request_location,
+    command_send_location,
+    command_reset_location,
+    command_set_pk,
+    send_instruction_common,
+    send_instruction_common_with_friend
+} from "./commands";
+
+
+
+import {
+  serializeUploadLocation,
+  serializeResetLocation,
+  serializeRequestLocation,
+  serializeAddFriend,
+  serializeRemoveFriend, 
+  serializeSetPk,
+  InstructionVariant,
+} from "./data";
 
 
 
@@ -36,38 +61,63 @@ import { Z_OK } from "mz/zlib";
 
 
   // seed is decided by each user
-  const seed = "bank";
+  const seed1 = "seed1";
+  const seed2 = "seed2";
   
   // toPubkey to access to the sc data account
-  const toPubkey = await register_user(connection, payer, seed, programId);
+  const toPubkey1 = await register_user(connection, payer, seed1, programId);
+  const toPubkey2 = await register_user(connection, payer, seed2, programId);
 
   // check if account is created
-  get_account_info_then_deserialize(connection, toPubkey);
+  await get_account_info_then_deserialize(connection, toPubkey1);
+  await get_account_info_then_deserialize(connection, toPubkey2);
+
+  let client1_sk = gen_sk();
+  let client1_pk = gen_pk(client1_sk);
+
+  console.log(client1_pk);
+
+  let client2_sk = gen_sk();
+  let client2_pk = gen_pk(client2_sk);
 
 
-  const command = 2;
   const lat = 100;
   const lng = 200;
-  const add_friend = "myfriend1";
-  const instructionData = serializeData(command, lat, lng, add_friend);
 
-  // toPubKey == public key which has write permission to the account
-  // pubKey == public key of client
-  const programInstruction = new TransactionInstruction({
-    // access to data account which toPubKey can write
-  keys: [
-    { pubkey: toPubkey, isSigner: false, isWritable: true },
-    { pubkey: toPubkey, isSigner: false, isWritable: true }
-    ],
-  programId: programId, // address of contract
-  data: Buffer.from(instructionData), // data in byte array
-  });
+  const OptionSchema = new Map([
+    [Object,
+      { kind: "struct",
+      fields: [
+        ["command", "u32"],
+        ["lat", "u32"],
+        ["lng", "u32"],
+        ["pk", "u32"],
+        ["friend_id", "u32"],
+        ["friend_address", "string"],
+      ] }]]);
 
-  // payer is signer which is myself here
-  // signer is wallet holder
-  const programTx = await sendAndConfirmTransaction(connection, new Transaction().add(programInstruction), [payer]);
+
+
+  command_set_pk(
+    client1_pk,
+    toPubkey1,
+    programId,
+    connection,
+    payer
+    );
+
+  command_set_pk(
+    client2_pk,
+    toPubkey2,
+    programId,
+    connection,
+    payer
+    );
 
   // get account after
-  get_account_info_then_deserialize(connection, toPubkey);
+  console.log("\npubKey1 data acccount")
+  get_account_info_then_deserialize(connection, toPubkey1);
+  console.log("\npubKey2 data acccount")
+  get_account_info_then_deserialize(connection, toPubkey2);
     
 })();
