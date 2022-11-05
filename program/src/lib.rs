@@ -9,21 +9,6 @@ use solana_program::{
     msg,
 };
 
-// use grasscrete::{
-//     PublicKey,
-//     SecretKey,
-//     KeySwitchKey,
-//     gen_pk,
-//     gen_sk,
-//     gen_ksk
-// };
-
-
-// program data
-//#[derive(BorshSerialize, BorshDeserialize, Debug)]
-//pub struct BankAccount {
-//    pub balance: u32
-//}
 
 // program data
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
@@ -37,8 +22,6 @@ pub struct UserData{
     pub friend3: String,
     pub friend_lat: u32,
     pub friend_lng: u32,
-
-    //pub ksk_server_to_me: String
 }
 
 
@@ -54,24 +37,7 @@ pub struct OptionCommand{
 }
 
 
-// trying to understand
-// - shared storage?? (make another sc and get it from there)
-// - vec list for frinds list
-// - need to store key switch key
-// - somehow need to intialize the server pk/sk when sc deployed
 
-
-// TODO function to implement
-// 0 => create ksk for user
-// 1 => set encrypted coordinate
-// 2 => set friends list
-// 3 => remove friends from list
-// 4 => get location
-
-// TODO necessary impl
-
-// - hard code sk, pk for sc side first
-// - fix the struct shape
 
 const server_sk: f64 = 1./0.2;
 const server_pk: f64 = 0.2;
@@ -90,10 +56,6 @@ pub fn increase_balance(
     let accounts_iter = &mut accounts.iter();
     let account = next_account_info(accounts_iter)?;
 
-
-    // client1 -> get_location(account_info)
-
-    //let target_account
 
     // account must be owned by the programgetAccountInfo in order to modify its data
     if account.owner != program_id {
