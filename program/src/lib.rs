@@ -141,20 +141,28 @@ pub fn increase_balance(
             let account2 = next_account_info(accounts_iter)?;
             let user_data2= UserData::try_from_slice(&account2.data.borrow())?;
 
-            let mut user2_lat = user_data2.lat;
-            let mut user2_lng = user_data2.lng;
+            if user_data2.friend1 == instruction.friend_address ||
+            user_data2.friend2 == instruction.friend_address || user_data2.friend3 == instruction.friend_address{
 
-            // third operate ksk
-            user2_lat = (((user2_lat as f64 / multiple) * (ksk as f64 / multiple)) * multiple) as u32;
-            user2_lng = (((user2_lng as f64 / multiple) * (ksk as f64 / multiple)) * multiple) as u32;
+                let mut user2_lat = user_data2.lat;
+                let mut user2_lng = user_data2.lng;
+
+                // third operate ksk
+                user2_lat = (((user2_lat as f64 / multiple) * (ksk as f64 / multiple)) * multiple) as u32;
+                user2_lng = (((user2_lng as f64 / multiple) * (ksk as f64 / multiple)) * multiple) as u32;
 
 
-            // fourth write result to user1.friend_lat, user1.friend_lng
-            user_data.friend_lat = user2_lat;
-            user_data.friend_lng = user2_lng;
-            user_data.serialize(&mut &mut account.data.borrow_mut()[..])?;
+                // fourth write result to user1.friend_lat, user1.friend_lng
+                user_data.friend_lat = user2_lat;
+                user_data.friend_lng = user2_lng;
+                user_data.serialize(&mut &mut account.data.borrow_mut()[..])?;
+                Ok(())
 
-            Ok(())
+            }
+            else{
+                Ok(())
+
+            }
 
         }
 

@@ -70,22 +70,24 @@ import {
   const lat = 100;
   const lng = 200;
 
+  await command_add_friend(1, "myfriend1", toPubkey1, programId, connection, payer);
 
-  command_set_pk(
-    client1_pk,
-    toPubkey1,
-    programId,
-    connection,
-    payer
-    );
 
-  command_set_pk(
-    client2_pk,
-    toPubkey2,
-    programId,
-    connection,
-    payer
-    );
+  // command_set_pk(
+  //   client1_pk,
+  //   toPubkey1,
+  //   programId,
+  //   connection,
+  //   payer
+  //   );
+
+  // command_set_pk(
+  //   client2_pk,
+  //   toPubkey2,
+  //   programId,
+  //   connection,
+  //   payer
+  //   );
 
   // get account after
   console.log("\npubKey1 data acccount")
