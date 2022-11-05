@@ -1,6 +1,36 @@
 # Simple Solana Program
 Just increase user balance in bank account
 
+# to reproduce the code so far,
+
+if you install solana cli, 
+
+under solana_program
+
+```
+sh reset.sh 
+```
+
+to up the chain running,
+
+then solana_program/program
+
+```
+sh upload.sh
+```
+
+to build and deploy your smart contract on chain,
+
+then solana_program/client
+
+```
+yarn install && yarn start 
+```
+
+to run client main.ts client code
+
+
+
 ## Create Local Chain
 
 https://github.com/solana-labs/example-helloworld
@@ -34,4 +64,5 @@ $ cargo test
 // increase balance
 $ yarn start
 ```
+
 
