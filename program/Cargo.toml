@@ -7,7 +7,8 @@ edition = "2021"
 borsh = "0.9.3"
 borsh-derive = "0.9.1"
 solana-program = "1.14.6"
-concrete-experiment = { path = "fhe_wasm" }
+grasscrete = {path = "grasscrete"}
+getrandom = { version = "0.2.2", features = ["custom"] }
 
 [lib]
 name = "bank"
