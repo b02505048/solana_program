@@ -37,18 +37,6 @@ import {
 
 
 
-import {
-  serializeUploadLocation,
-  serializeResetLocation,
-  serializeRequestLocation,
-  serializeAddFriend,
-  serializeRemoveFriend, 
-  serializeSetPk,
-  InstructionVariant,
-} from "./data";
-
-
-
 (async () => {
   let connection = new Connection("http://127.0.0.1:8899", "confirmed");
   // payer is the one who deployed this smart contract on solana chain
@@ -75,27 +63,12 @@ import {
   let client1_sk = gen_sk();
   let client1_pk = gen_pk(client1_sk);
 
-  console.log(client1_pk);
-
   let client2_sk = gen_sk();
   let client2_pk = gen_pk(client2_sk);
 
 
   const lat = 100;
   const lng = 200;
-
-  const OptionSchema = new Map([
-    [Object,
-      { kind: "struct",
-      fields: [
-        ["command", "u32"],
-        ["lat", "u32"],
-        ["lng", "u32"],
-        ["pk", "u32"],
-        ["friend_id", "u32"],
-        ["friend_address", "string"],
-      ] }]]);
-
 
 
   command_set_pk(
