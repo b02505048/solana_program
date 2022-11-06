@@ -1,68 +1,44 @@
-# Simple Solana Program
-Just increase user balance in bank account
+# プロダクト概要
+# Tesolana Smart Contract
 
-# to reproduce the code so far,
+Tesolana は、
+自分の位置情報を友達と「セキュア」に共有することのできるWeb3アプリです。
+Tesolana はSolanaチェーン上にデプロイされたスマートコントラクトで作られたdAppです。
+Tesolanaは、暗号技術を用いて、自分のフレンドユーザのみに安全に位置情報を共有できます。
+ユーザの位置情報は暗号化され、不特定多数のユーザや、スマートコントラクト側はユーザの位置情報を知ることはできません。
 
-if you install solana cli, 
+各ユーザがアップロードした位置情報はSolanaのデータアカウントに保存され、
+他のユーザもその情報を取得できますが、他のユーザが取得できるのは暗号化された位置情報のみです。
+ユーザ１がユーザ２をフレンド登録すると、スマートコントラクトは、
+ユーザ１のデータアカウントに登録されているユーザ１の位置情報（暗号）を、ユーザ２の鍵ペアで復号できる暗号に作り替え（プロキシ再暗号）、ユーザ２のデータアカウントに書き込みます。
+そのようにして、サーバサイドにも、ユーザサイドにも位置情報を公開することなく
+必要な人たちにのみ位置情報を公開することのできるようなdAppを今回は作成しました。
 
-under solana_program
+# Frontend code
+https://github.com/b02505048/tesolana
+# Frontend URL
 
-```
-sh reset.sh 
-```
+https://tesolana.web.app
 
-to up the chain running,
-
-then solana_program/program
-
-```
-sh upload.sh
-```
-
-to build and deploy your smart contract on chain,
-
-then solana_program/client
-
-```
-yarn install && yarn start 
-```
-
-to run client main.ts client code
+# Backend code
+https://github.com/b02505048/solana_program
 
 
+# 使用したtech stacks
+フロントエンド
+- vuejs (frontend)
+- web3js (solana client)
+- firebase (deployment)
 
-## Create Local Chain
+バックエンド
+- solana_program (smart contract)
+- encryption (rust)
 
-https://github.com/solana-labs/example-helloworld
+# 使用したBlockchain
+**Solana**
 
-```
-$ solana config set --url http://127.0.0.1:8899
-$ solana-keygen new
-$ solana-test-validator
-```
+# deployしたContract
+バックエンドのコントラクト
 
-### Build & Deploy
-
-```
-$ cd program
-$ make build
-
-// deploy to localnet
-$ make local
-```
-
-### Test
-
-```
-$ cd program
-$ cargo test
-```
-
-### Client command
-
-```
-// increase balance
-$ yarn start
-```
-
-
+# application codeやその他のfile
+アプリケーションはフロントエンドにコードがあります。
