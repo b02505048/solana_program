@@ -42,3 +42,14 @@ https://github.com/b02505048/solana_program
 
 # application codeやその他のfile
 アプリケーションはフロントエンドにコードがあります。
+
+提出時点でのスマートコントラクトのテスト方法については
+sc-how-to-use.md
+
+暗号については、
+explain-encryption.md
+
+提出時の作業の進捗については
+explain-progress.md
+
+をご覧ください。
